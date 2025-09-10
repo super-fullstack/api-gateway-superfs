@@ -25,6 +25,9 @@ public class GatewayJwtFilter extends OncePerRequestFilter {
             "/auth/login",
             "/auth/signup",
             "/actuator/**",
+            "/actuator/health",
+            "/auth/**",
+            "/actuator/info",
             "/swagger-ui/**",
             "/v3/**"
     );
