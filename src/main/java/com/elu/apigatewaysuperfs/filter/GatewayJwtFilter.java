@@ -18,22 +18,22 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 @Component
 public class GatewayJwtFilter extends OncePerRequestFilter {
+
+    // Use Ant-style patterns with ** for matching all subpaths
     private static final List<String> PUBLIC_URLS = List.of(
             "/auth/login",
             "/auth/signup",
-            "/actuator/**",
-            "/actuator/health",
-            "/auth/**",
-            "/actuator/info",
-            "/swagger-ui/**",
-            "/v3/**"
+            "/auth/**",              // Matches all paths under /auth/
+            "/actuator/**",          // Matches all actuator endpoints
+            "/swagger-ui/**",        // Matches all swagger UI resources
+            "/v3/**",                // Matches all OpenAPI docs
+            "/error",                // Spring Boot error endpoint
+            "/favicon.ico"           // Common browser request
     );
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
-
     private final JwtUtil jwtUtil;
 
     public GatewayJwtFilter(JwtUtil jwtUtil) {
@@ -46,54 +46,79 @@ public class GatewayJwtFilter extends OncePerRequestFilter {
                                     FilterChain chain)
             throws ServletException, IOException {
 
-//        System.out.println("INSIDE API AGTE WAY");
-
-//        String path = req.getRequestURI();
-//        System.out.println("THIS IS THE PATH " + path);
-//        // 1) Skip public paths
-//        if (PUBLIC_URLS.stream().anyMatch(path::startsWith)) {
-//            System.out.println("THIS IS OKAY" + path);
-//            chain.doFilter(req, res);
-//            return;
-
-
         String path = req.getRequestURI();
 
-        if (PUBLIC_URLS.stream().anyMatch(pattern -> pathMatcher.match(pattern, path))) {
+        // Debug logging (remove in production)
+        System.out.println("JWT Filter - Processing path: " + path);
+
+        // 1) Skip public paths - using proper Ant pattern matching
+        boolean isPublicPath = PUBLIC_URLS.stream()
+                .anyMatch(pattern -> pathMatcher.match(pattern, path));
+
+        if (isPublicPath) {
+            System.out.println("JWT Filter - Public path, skipping authentication: " + path);
             chain.doFilter(req, res);
             return;
         }
 
-        // 2) Extract token
-        String token = null;
+        // 2) Extract token from Authorization header or Cookie
+        String token = extractToken(req);
+
+        // 3) Validate token
+        if (token == null) {
+            System.out.println("JWT Filter - No token found for path: " + path);
+            res.setStatus(HttpStatus.UNAUTHORIZED.value());
+            res.getWriter().write("{\"error\": \"No authentication token provided\"}");
+            return;
+        }
+
+        if (!jwtUtil.validateToken(token)) {
+            System.out.println("JWT Filter - Invalid token for path: " + path);
+            res.setStatus(HttpStatus.UNAUTHORIZED.value());
+            res.getWriter().write("{\"error\": \"Invalid or expired token\"}");
+            return;
+        }
+
+        // 4) Build Authentication and set in SecurityContext
+        try {
+            String email = jwtUtil.extractEmail(token);
+            List<SimpleGrantedAuthority> authorities = jwtUtil.extractRoles(token).stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(email, null, authorities);
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            System.out.println("JWT Filter - Authentication successful for: " + email);
+
+        } catch (Exception e) {
+            System.err.println("JWT Filter - Error processing token: " + e.getMessage());
+            res.setStatus(HttpStatus.UNAUTHORIZED.value());
+            res.getWriter().write("{\"error\": \"Token processing failed\"}");
+            return;
+        }
+
+        chain.doFilter(req, res);
+    }
+
+    private String extractToken(HttpServletRequest req) {
+        // Try Authorization header first
         String authHeader = req.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-        } else if (req.getCookies() != null) {
-            for (Cookie c : req.getCookies()) {
-                if ("jwt".equals(c.getName())) {
-                    token = c.getValue();
-                    break;
+            return authHeader.substring(7);
+        }
+
+        // Fallback to cookie
+        if (req.getCookies() != null) {
+            for (Cookie cookie : req.getCookies()) {
+                if ("jwt".equals(cookie.getName())) {
+                    return cookie.getValue();
                 }
             }
         }
 
-        // 3) Validate
-        if (token == null || !jwtUtil.validateToken(token)) {
-            res.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
-        }
-
-        // 4) Build a minimal Authentication
-        String email = jwtUtil.extractEmail(token);
-        var auth = new UsernamePasswordAuthenticationToken(
-                email, null,
-                jwtUtil.extractRoles(token).stream() // assume you have this method
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList())
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        chain.doFilter(req, res);
+        return null;
     }
 }
