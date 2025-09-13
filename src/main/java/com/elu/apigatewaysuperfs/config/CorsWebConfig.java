@@ -6,6 +6,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -14,14 +15,15 @@ public class CorsWebConfig {
 
     @Bean
     public CorsFilter corsFilter() {
+
+        System.out.println("INSIDET CORS FILTER");
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 //        corsConfiguration.addAllowedOrigin("*");
-        corsConfiguration.addAllowedHeader("*");
-        corsConfiguration.addAllowedMethod("*");
+//        corsConfiguration.addAllowedHeader("*");
+        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5000", "http://localhost:5001", "http://127.0.0.1:5000"));
+        corsConfiguration.setAllowedMethods(List.of("*"));
+        corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowCredentials(true);
-        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5000"));
-        corsConfiguration.addExposedHeader("Authorization");
-        corsConfiguration.addExposedHeader("Set-Cookie");
 
 
         UrlBasedCorsConfigurationSource source =
