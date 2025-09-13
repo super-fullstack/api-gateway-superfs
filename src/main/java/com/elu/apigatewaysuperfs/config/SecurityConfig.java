@@ -58,22 +58,28 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
-        // Explicitly allow your frontend(s)
+        // Explicitly allow frontend origins (cannot use "*" with credentials)
         corsConfiguration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
-                "http://192.168.49.2:3000" // if you run frontend via minikube
+                "http://192.168.49.2:3000"
         ));
 
         corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        corsConfiguration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+
+        // Allow all headers (safer during development)
+        corsConfiguration.setAllowedHeaders(List.of("*"));
+
+        // ✅ Allow cookies (required for credentials: include)
         corsConfiguration.setAllowCredentials(true);
 
-        corsConfiguration.setExposedHeaders(List.of("Authorization"));
+        // ✅ Expose both Authorization & Set-Cookie headers
+        corsConfiguration.setExposedHeaders(Arrays.asList("Authorization", "Set-Cookie"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
 
         return new CorsFilter(source);
     }
+
 }
