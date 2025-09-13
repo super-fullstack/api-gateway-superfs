@@ -15,20 +15,20 @@ public class CorsWebConfig {
 
     @Bean
     public CorsFilter corsFilter() {
-
-        System.out.println("INSIDET CORS FILTER");
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-//        corsConfiguration.addAllowedOrigin("*");
-//        corsConfiguration.addAllowedHeader("*");
-//        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5000", "http://localhost:5001", "http://127.0.0.1:5000", "http://192.168.49.2:5000"));
-        corsConfiguration.addAllowedOriginPattern("*"); // 👈 allows all origins
-        corsConfiguration.setAllowedMethods(List.of("*"));
-        corsConfiguration.setAllowedHeaders(List.of("*"));
+
+        // Explicitly allow your frontend(s)
+        corsConfiguration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://192.168.49.2:3000" // if you run frontend via minikube
+        ));
+
+        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         corsConfiguration.setAllowCredentials(true);
 
-
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
 
         return new CorsFilter(source);
