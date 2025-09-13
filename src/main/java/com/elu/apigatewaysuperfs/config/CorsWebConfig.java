@@ -20,7 +20,8 @@ public class CorsWebConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 //        corsConfiguration.addAllowedOrigin("*");
 //        corsConfiguration.addAllowedHeader("*");
-        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5000", "http://localhost:5001", "http://127.0.0.1:5000", "http://192.168.49.2:5000"));
+//        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5000", "http://localhost:5001", "http://127.0.0.1:5000", "http://192.168.49.2:5000"));
+        corsConfiguration.addAllowedOriginPattern("*"); // 👈 allows all origins
         corsConfiguration.setAllowedMethods(List.of("*"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowCredentials(true);
