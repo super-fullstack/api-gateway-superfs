@@ -36,7 +36,7 @@ public class SecurityConfig {
         securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement( session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests( authorize ->
@@ -56,25 +56,47 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration corsConfiguration = new CorsConfiguration();
+//    @Bean
+//    public CorsFilter corsFilter() {
+//        CorsConfiguration corsConfiguration = new CorsConfiguration();
+//
+//        // Explicitly allow your frontend(s)
+//        corsConfiguration.setAllowedOrigins(Arrays.asList(
+//                "http://localhost:3000",
+//                "http://127.0.0.1:3000",
+//                "http://192.168.49.2:3000" // if you run frontend via minikube
+//        ));
+//
+//        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+//        corsConfiguration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+//        corsConfiguration.setAllowCredentials(true);
+//
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", corsConfiguration);
+//
+//        return new CorsFilter(source);
+//    }
 
-        // Explicitly allow your frontend(s)
-        corsConfiguration.setAllowedOrigins(Arrays.asList(
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // Explicitly allow specific origins (no wildcards)
+        configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
-                "http://192.168.49.2:3000" // if you run frontend via minikube
+                "http://192.168.49.2:3000"
         ));
 
-        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        corsConfiguration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
-        corsConfiguration.setAllowCredentials(true);
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization")); // Expose headers if needed
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // 1 hour
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfiguration);
-
-        return new CorsFilter(source);
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
 }
