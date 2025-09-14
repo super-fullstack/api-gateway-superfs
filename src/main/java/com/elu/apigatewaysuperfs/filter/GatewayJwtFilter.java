@@ -55,6 +55,10 @@ public class GatewayJwtFilter extends OncePerRequestFilter {
 //            chain.doFilter(req, res);
 //            return;
 
+        if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
+            chain.doFilter(req, res);
+            return;
+        }
 
         String path = req.getRequestURI();
 
