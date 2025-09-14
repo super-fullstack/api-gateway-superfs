@@ -32,7 +32,7 @@ spec:
       containers:
         - name: api-gateway-superfs
           image: elu107/api-gateway-superfs:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
 
